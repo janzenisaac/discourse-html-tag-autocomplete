@@ -15,39 +15,26 @@ export default {
         chat.addAutocompleteFn(testFn);
       }
 
-      const template = function (params) {
-        const options = params.options;
-        let html = "<div class='autocomplete'>";
-
-        html += "<ul>";
-        options.forEach((a) => {
-          html += `<li><a href title="${a.code}">`;
-          html += `<span class='username'>${a.code}</span>`;
-          html += `</a></li>`;
-        });
-        html += "</ul>";
-
-        html += "</div>";
-
-        return new Handlebars.SafeString(html).string;
-      };
-
-      function testFn(textarea) {
-        chat._$textarea = $(textarea);
-        chat._$textarea.autocomplete({
-          template: template,
+      console.log(findRawTemplate("html-tag-autocomplete"))
+      let term;
+      function testFn(chatComposer) {
+        const textarea = $(chatComposer._textarea);
+        textarea.autocomplete({
+          template: findRawTemplate("html-tag-autocomplete"),
           key: "<",
           afterComplete: (text) => {
-            chat._$textarea.val(text);
-            // wtf do i do here
-            chat._focusTextArea();
+            chatComposer.set("value", text);
+            chatComposer._focusTextArea();
+            let selection = chatComposer.getSelected();
+            chatComposer.selectText(selection.pre.length - term.length - 4, 0);
           },
           treatAsTextarea: true,
           transformComplete: (v) => {
             if (v.code) {
+              term = v.code;
               return `${v.code}></${v.code}>`;
             } else {
-              $(textarea).autocomplete({ cancel: true });
+              textarea.autocomplete({ cancel: true });
               return "";
             }
           },
@@ -57,12 +44,10 @@ export default {
               term = term.toLowerCase();
 
               if (term === "") {
-                return resolve(["s", "smile", "wink", "sunny", "blush"]);
+                return resolve(["kbd", "smile", "wink", "sunny", "blush", "new"]);
               }
 
-              const options = tagSearch(term, {
-                maxResults: 5,
-              });
+              const options = tagSearch(term);
 
               return resolve(options);
             })

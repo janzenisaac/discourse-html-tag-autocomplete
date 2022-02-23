@@ -1,0 +1,12 @@
+div class='autocomplete ac-tag'>
+  <ul>
+    {{#each options as |option|}}
+      <li>
+        <a href>
+          <span class=''>{{option.code}}</span>
+          {{option.code}}
+        </a>
+      </li>
+    {{/each}}
+  </ul>
+</div>
