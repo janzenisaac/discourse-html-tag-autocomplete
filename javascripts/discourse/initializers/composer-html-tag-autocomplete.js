@@ -1,12 +1,12 @@
 import { withPluginApi } from "discourse/lib/plugin-api";
 import { findRawTemplate } from "discourse-common/lib/raw-templates";
 import { SKIP } from "discourse/lib/autocomplete";
-import Handlebars from "handlebars";
 import TextareaTextManipulation from "discourse/mixins/textarea-text-manipulation";
 import { getRegister } from "discourse-common/lib/get-owner";
+import { htmlTagSearch } from "../lib/html-tag-search";
 
 export default {
-  name: "discourse-tag-autocomplete",
+  name: "discourse-html-tag-autocomplete",
   initialize() {
     withPluginApi("0.8.7", (api) => {
       const chat = api.container.lookup("service:chat");
@@ -15,18 +15,17 @@ export default {
         chat.addAutocompleteFn(testFn);
       }
 
-      console.log(findRawTemplate("html-tag-autocomplete"))
       let term;
-      function testFn(chatComposer) {
-        const textarea = $(chatComposer._textarea);
+      function testFn(composer) {
+        const textarea = $(composer._textarea);
         textarea.autocomplete({
           template: findRawTemplate("html-tag-autocomplete"),
           key: "<",
           afterComplete: (text) => {
-            chatComposer.set("value", text);
-            chatComposer._focusTextArea();
-            let selection = chatComposer.getSelected();
-            chatComposer.selectText(selection.pre.length - term.length - 4, 0);
+            composer.set("value", text);
+            composer._focusTextArea();
+            let selection = composer.getSelected();
+            composer.selectText(selection.pre.length - term.length - 4, 0);
           },
           treatAsTextarea: true,
           transformComplete: (v) => {
@@ -44,25 +43,25 @@ export default {
               term = term.toLowerCase();
 
               if (term === "") {
-                return resolve(["kbd", "smile", "wink", "sunny", "blush", "new"]);
+                return resolve([
+                  "strike",
+                  "kbd",
+                  "b",
+                  "em",
+                  "mark",
+                  "small",
+                ]);
               }
 
-              const options = tagSearch(term);
+              const options = htmlTagSearch(term);
 
               return resolve(options);
-            })
-              .then((list) => {
-                if (list === SKIP) {
-                  return;
-                }
-                return list.map((code) => ({ code }));
-              })
-              .then((list) => {
-                if (list?.length) {
-                  list.push({ label: I18n.t("composer.more_emoji"), term });
-                }
-                return list;
-              });
+            }).then((list) => {
+              if (list === SKIP) {
+                return;
+              }
+              return list.map((code) => ({ code }));
+            });
           },
         });
       }
